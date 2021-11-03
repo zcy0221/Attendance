@@ -4,6 +4,7 @@
 3. 放入数据库所有人的记录(记录格式：[姓名，日期，上班时间，下班时间，工号，部门])
 '''
 import re,json,sqlite3
+from sqlite3.dbapi2 import Cursor
 import win32com.client as win32
 from openpyxl import load_workbook
 
@@ -27,7 +28,7 @@ map={'275':321,'276':322,'331':342,'332':341,'347':346,'348':347}
 #数据库创建连接
 conn=sqlite3.connect('attendance_sheet.db')
 c=conn.cursor()
-c.execute('create table record(name text(20),date text(20),clock_in text(20),clock_out text(20),jobnumber integer(10),department text(20))')
+c.execute('create table record(name text(20),date text(20),sign_in text(20),sign_out text(20),special text(20),jobnumber text(10),department text(20))')
 conn.commit()
 conn.close()
 
@@ -45,9 +46,10 @@ for m in range(1, 39):  # 员工
             num=json_data['%s'%job_number]
         name=num[0]
         department=num[1]
-
+        #日期处理
         date_cell=ws.cell(3,29).value
         date=date_cell[0:8]
+        date=date.replace("/","-")
         if(n//10<1):
             day='0%d'%n
         else:
@@ -80,13 +82,22 @@ for m in range(1, 39):  # 员工
         conn1=sqlite3.connect('attendance_sheet.db')
         c1=conn1.cursor()
         
+        special=''
         if(clock_in_value==" " and clock_out_value==" "):
             pass
         else:
             #print(f'[姓名:{name}, 日期:{date_cell_value}, 部门:{department}, 工号:{job_number}, 上班时间:{clock_in_value}, 下班时间:{clock_out_value}]')
-            c1.execute(f"INSERT INTO record (name,date,department,jobnumber,clock_in,clock_out) VALUES ('{name}', '{date_cell_value}','{department}', '{job_number}', '{clock_in_value}', '{clock_out_value}' )")
+            c1.execute(f"INSERT INTO record (name,date,department,jobnumber,sign_in,sign_out,special) VALUES ('{name}', '{date_cell_value}','{department}', '{job_number}', '{clock_in_value}', '{clock_out_value}','{special}' )")
             conn1.commit()
             conn1.close()
 
+
+""" #查询信息
+conn2=sqlite3.connect('attendance_sheet.db')
+search_name=input("请输入想要查询考勤信息的名字:")
+cursor=conn2.execute('select * from record where name="%s"'%search_name)
+for row in cursor:
+    print(row)
+conn2.close() """
 
 
